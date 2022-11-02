@@ -1,4 +1,5 @@
 pub const NO_CONTROLLER: u32 = u32::MAX;
+const AXIS_SHADOW: f32 = 10.0;
 pub struct ControllerManager {
     controller_id: u32
 }
@@ -41,5 +42,25 @@ impl ControllerManager {
 
     pub fn is_button_pressed(&self, button: ControllerButton) -> bool {
         sfml::window::joystick::is_button_pressed(self.controller_id, button as u32)
+    }
+
+    pub fn get_axis_rotation_left(&self) -> (f32, f32) {
+        let axis_x = sfml::window::joystick::axis_position(self.controller_id, sfml::window::joystick::Axis::X);
+        let axis_y = sfml::window::joystick::axis_position(self.controller_id, sfml::window::joystick::Axis::Y);
+
+        (
+            if axis_x.abs() < AXIS_SHADOW {0.0} else {axis_x},
+            if axis_y.abs() < AXIS_SHADOW {0.0} else {axis_y}
+        )
+    }
+
+    pub fn get_axis_rotation_right(&self) -> (f32, f32) {
+        let axis_x = sfml::window::joystick::axis_position(self.controller_id, sfml::window::joystick::Axis::R);
+        let axis_y = sfml::window::joystick::axis_position(self.controller_id, sfml::window::joystick::Axis::Z);
+
+        (
+            if axis_x.abs() < AXIS_SHADOW {0.0} else {axis_x},
+            if axis_y.abs() < AXIS_SHADOW {0.0} else {axis_y}
+        )
     }
 }
