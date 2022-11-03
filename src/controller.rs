@@ -1,4 +1,4 @@
-use sfml::graphics::{RenderTarget, Transformable};
+use sfml::graphics::{RenderTarget, Shape, Transformable};
 use crate::graphics::GraphicsManager;
 
 pub const NO_CONTROLLER: u32 = u32::MAX;
@@ -42,22 +42,23 @@ impl ControllerManager {
     pub fn update(&mut self, graphics_manager: &mut GraphicsManager) {
         self.update_controller_id();
         if !self.is_controller_connected() {
-            let font = graphics_manager.font.clone();
-            let mut text = sfml::graphics::Text::new("Controller is not connected", &font, 64);
-            text.set_position(sfml::system::Vector2f::new(50.0, 50.0));
+            let mut text = graphics_manager.create_text("Controller is not connected");
+            let mut text_sprite = sfml::graphics::Sprite::new();
+            text_sprite.set_texture(&text.texture(), true);
+            text_sprite.set_position(sfml::system::Vector2f::new(50.0, 50.0));
 
-            while !self.is_controller_connected() && !graphics_manager.should_close() {
+            while !self.is_controller_connected() && graphics_manager.window.is_open() {
                 self.update_controller_id();
 
                 while let Some(e) = graphics_manager.window.poll_event() {
                     match e {
-                        sfml::window::Event::KeyPressed { code: sfml::window::Key::Escape, .. } => graphics_manager.close(),
+                        sfml::window::Event::KeyPressed { code: sfml::window::Key::Escape, .. } => graphics_manager.window.close(),
                         _ => {}
                     }
                 }
 
                 graphics_manager.window.clear(sfml::graphics::Color::BLACK);
-                graphics_manager.window.draw(&text);
+                graphics_manager.window.draw(&text_sprite);
 
                 graphics_manager.window.display()
             }
