@@ -1,8 +1,8 @@
-use sfml::graphics::{RenderTarget, Shape, Transformable};
+use sfml::graphics::{RenderTarget, Transformable};
 use crate::graphics::GraphicsManager;
 
 pub const NO_CONTROLLER: u32 = u32::MAX;
-const AXIS_SHADOW: f32 = 10.0;
+const AXIS_SHADOW: f32 = 50.0;
 pub struct ControllerManager {
     controller_id: u32
 }
@@ -42,7 +42,7 @@ impl ControllerManager {
     pub fn update(&mut self, graphics_manager: &mut GraphicsManager) {
         self.update_controller_id();
         if !self.is_controller_connected() {
-            let mut text = graphics_manager.create_text("Controller is not connected");
+            let text = graphics_manager.create_text("Controller is not connected, you can press ESC to exit.");
             let mut text_sprite = sfml::graphics::Sprite::new();
             text_sprite.set_texture(&text.texture(), true);
             text_sprite.set_position(sfml::system::Vector2f::new(50.0, 50.0));

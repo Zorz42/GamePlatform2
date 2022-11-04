@@ -1,4 +1,4 @@
-use sfml::graphics::{Drawable, RenderTarget, Shape, Transformable};
+use sfml::graphics::{RenderTarget};
 
 pub struct GraphicsManager {
     pub window: sfml::graphics::RenderWindow,
@@ -16,15 +16,15 @@ impl GraphicsManager {
             sfml::window::Style::FULLSCREEN,
             &Default::default(),
             ),
-            font: unsafe { sfml::graphics::Font::from_memory(std::include_bytes!("../resources/arial.ttf")) }.unwrap(),
+            font: unsafe { sfml::graphics::Font::from_memory(include_bytes!("../resources/arial.ttf")) }.unwrap(),
         };
         gfx_manager.window.set_vertical_sync_enabled(true);
         gfx_manager
     }
 
     pub fn create_text(&self, text: &str) -> sfml::graphics::RenderTexture {
-        let mut text = sfml::graphics::Text::new(text, &self.font, CHARACTER_SIZE);
-        let mut texture = sfml::graphics::RenderTexture::new(text.local_bounds().width as u32 + 5, CHARACTER_SIZE).unwrap();
+        let text = sfml::graphics::Text::new(text, &self.font, CHARACTER_SIZE);
+        let mut texture = sfml::graphics::RenderTexture::new(text.local_bounds().width as u32 + 5, CHARACTER_SIZE * 2).unwrap();
         texture.clear(sfml::graphics::Color::TRANSPARENT);
         texture.draw(&text);
         texture.display();
