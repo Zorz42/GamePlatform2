@@ -12,19 +12,25 @@ struct Tile<'a> {
 
 const TILE_SIZE: f32 = 1500.0;
 const TILE_SPACING: f32 = 300.0;
+const TILE_SIZE_CHANGE: f32 = 200.0;
 
 impl Tile<'_> {
     pub fn new() -> Self {
         let mut result = Tile{
             rect: sfml::graphics::RectangleShape::new(),
         };
-        result.rect.set_size(sfml::system::Vector2f::new(TILE_SIZE, TILE_SIZE));
         result.rect.set_fill_color(sfml::graphics::Color::rgb(rand::random(), rand::random(), rand::random()));
         result
     }
 
-    pub fn draw(&mut self, offset: f32, graphics_manager: &mut graphics::GraphicsManager) {
-        self.rect.set_position(sfml::system::Vector2f::new(offset, 500.0));
+    pub fn draw(&mut self, offset: f32, graphics_manager: &mut graphics::GraphicsManager, is_selected: bool) {
+        if is_selected {
+            self.rect.set_position(sfml::system::Vector2f::new(offset - TILE_SIZE_CHANGE / 2.0, 500.0));
+            self.rect.set_size(sfml::system::Vector2f::new(TILE_SIZE + TILE_SIZE_CHANGE, TILE_SIZE + TILE_SIZE_CHANGE));
+        } else {
+            self.rect.set_position(sfml::system::Vector2f::new(offset, 500.0));
+            self.rect.set_size(sfml::system::Vector2f::new(TILE_SIZE, TILE_SIZE));
+        }
         graphics_manager.window.draw(&self.rect);
     }
 }
@@ -80,8 +86,10 @@ fn main() {
         tiles_render_pos += (tiles_render_pos_must_be - tiles_render_pos) / 7.0;
 
         let mut curr_x = tiles_render_pos + sfml::window::VideoMode::desktop_mode().width as f32 / 2.0 - TILE_SIZE / 2.0;
+
+        let selected_tile = (-tiles_render_pos_must_be / (TILE_SIZE + TILE_SPACING)) as u32;
         for i in 0..tiles.len() {
-            tiles[i].draw(curr_x, &mut graphics_manager);
+            tiles[i].draw(curr_x, &mut graphics_manager, i as u32 == selected_tile);
             curr_x += TILE_SIZE + TILE_SPACING;
         }
 
