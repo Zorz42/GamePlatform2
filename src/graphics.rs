@@ -1,6 +1,6 @@
-use sfml::graphics::{RenderTarget, Transformable};
+use std::ptr::null;
+use sfml::graphics::{RenderTarget, Shape, Transformable};
 
-const CHARACTER_SIZE: u32 = 64;
 const NO_CONTROLLER: u32 = u32::MAX;
 const AXIS_SHADOW: f32 = 50.0;
 
@@ -24,11 +24,12 @@ pub struct GraphicsManager {
     pub window: sfml::graphics::RenderWindow,
     font: sfml::SfBox<sfml::graphics::Font>,
     controller_id: u32,
+    no_controller_texture: Option<sfml::graphics::RenderTexture>,
 }
 
 impl GraphicsManager {
     pub fn new(title: &str) -> Self {
-        let mut gfx_manager = GraphicsManager{
+        let mut graphics = GraphicsManager{
             window: sfml::graphics::RenderWindow::new(
             sfml::window::VideoMode::desktop_mode(),
             title,
@@ -37,14 +38,16 @@ impl GraphicsManager {
             ),
             font: unsafe { sfml::graphics::Font::from_memory(include_bytes!("../resources/arial.ttf")) }.unwrap(),
             controller_id: NO_CONTROLLER,
+            no_controller_texture: None,
         };
-        gfx_manager.window.set_vertical_sync_enabled(true);
-        gfx_manager
+        graphics.window.set_vertical_sync_enabled(true);
+        graphics.no_controller_texture = Some(graphics.create_text("Controller is not connected, you can press ESC to exit.", 100));
+        graphics
     }
 
-    pub fn create_text(&self, text: &str) -> sfml::graphics::RenderTexture {
-        let text = sfml::graphics::Text::new(text, &self.font, CHARACTER_SIZE);
-        let mut texture = sfml::graphics::RenderTexture::new(text.local_bounds().width as u32 + 5, CHARACTER_SIZE * 2).unwrap();
+    pub fn create_text(&self, text: &str, char_size: u32) -> sfml::graphics::RenderTexture {
+        let text = sfml::graphics::Text::new(text, &self.font, char_size);
+        let mut texture = sfml::graphics::RenderTexture::new(text.local_bounds().width as u32 + 5, char_size * 2).unwrap();
         texture.clear(sfml::graphics::Color::TRANSPARENT);
         texture.draw(&text);
         texture.display();
@@ -71,6 +74,10 @@ impl GraphicsManager {
     }
 
     pub fn get_axis_rotation_left(&self) -> (f32, f32) {
+        if !self.is_controller_connected() {
+            return (0.0, 0.0);
+        }
+
         let axis_x = sfml::window::joystick::axis_position(self.controller_id, sfml::window::joystick::Axis::X);
         let axis_y = sfml::window::joystick::axis_position(self.controller_id, sfml::window::joystick::Axis::Y);
 
@@ -81,6 +88,10 @@ impl GraphicsManager {
     }
 
     pub fn get_axis_rotation_right(&self) -> (f32, f32) {
+        if !self.is_controller_connected() {
+            return (0.0, 0.0);
+        }
+
         let axis_x = sfml::window::joystick::axis_position(self.controller_id, sfml::window::joystick::Axis::R);
         let axis_y = sfml::window::joystick::axis_position(self.controller_id, sfml::window::joystick::Axis::Z);
 
@@ -93,26 +104,15 @@ impl GraphicsManager {
     pub fn update_controllers(&mut self) {
         self.update_controller_id();
         if !self.is_controller_connected() {
-            let text = self.create_text("Controller is not connected, you can press ESC to exit.");
+            let mut back_rect = sfml::graphics::RectangleShape::new();
+            back_rect.set_size(sfml::system::Vector2f::new(sfml::window::VideoMode::desktop_mode().width as f32, sfml::window::VideoMode::desktop_mode().height as f32));
+            back_rect.set_fill_color(sfml::graphics::Color::rgba(0, 0, 0, 200));
+            self.window.draw(&back_rect);
+
             let mut text_sprite = sfml::graphics::Sprite::new();
-            text_sprite.set_texture(&text.texture(), true);
-            text_sprite.set_position(sfml::system::Vector2f::new(50.0, 50.0));
-
-            while !self.is_controller_connected() && self.window.is_open() {
-                self.update_controller_id();
-
-                while let Some(e) = self.window.poll_event() {
-                    match e {
-                        sfml::window::Event::KeyPressed { code: sfml::window::Key::Escape, .. } => self.window.close(),
-                        _ => {}
-                    }
-                }
-
-                self.window.clear(sfml::graphics::Color::BLACK);
-                self.window.draw(&text_sprite);
-
-                self.window.display()
-            }
+            text_sprite.set_texture(&self.no_controller_texture.as_ref().unwrap().texture(), true);
+            text_sprite.set_position(sfml::system::Vector2f::new(100.0, 100.0));
+            self.window.draw(&text_sprite);
         }
     }
 }
@@ -132,10 +132,10 @@ pub fn run_scene(mut scene: Box<dyn Scene>, graphics: &mut GraphicsManager) {
             scene.on_event(graphics, event);
         }
 
-        graphics.update_controllers();
         graphics.window.clear(sfml::graphics::Color::BLACK);
 
         scene.render(graphics);
+        graphics.update_controllers();
 
         graphics.window.display()
     }
