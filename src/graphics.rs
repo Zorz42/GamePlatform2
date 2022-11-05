@@ -1,4 +1,3 @@
-use std::ptr::null;
 use sfml::graphics::{RenderTarget, Shape, Transformable};
 
 const NO_CONTROLLER: u32 = u32::MAX;
