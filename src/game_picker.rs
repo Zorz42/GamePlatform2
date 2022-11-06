@@ -1,6 +1,7 @@
 use crate::graphics;
 use rand;
 use sfml;
+use crate::game_manager;
 use sfml::graphics::{RenderTarget, Shape, Transformable};
 use crate::graphics::{GraphicsManager};
 
@@ -13,7 +14,7 @@ const TILE_SPACING: f32 = 300.0;
 const TILE_SIZE_CHANGE: f32 = 200.0;
 
 impl Tile<'_> {
-    pub fn new() -> Self {
+    pub fn new(name: String) -> Self {
         let mut result = Tile{
             rect: sfml::graphics::RectangleShape::new(),
         };
@@ -39,6 +40,7 @@ pub struct GamePickerScene<'a> {
     tiles_pos: f32,
     tiles_render_pos_must_be: f32,
     tiles_render_pos: f32,
+    games: game_manager::GameManager,
 }
 
 impl GamePickerScene<'_> {
@@ -48,15 +50,17 @@ impl GamePickerScene<'_> {
             tiles_vel: 0.0,
             tiles_pos: 0.0,
             tiles_render_pos_must_be: 0.0,
-            tiles_render_pos: 0.0
+            tiles_render_pos: 0.0,
+            games: game_manager::GameManager::new(),
         }
     }
 }
 
 impl graphics::Scene for GamePickerScene<'_> {
     fn init(&mut self, mut _graphics: &mut GraphicsManager) {
-        for _ in 0..10 {
-            self.tiles.push(Tile::new());
+        self.games.init();
+        for game in &self.games.games {
+            self.tiles.push(Tile::new(game.name.clone()))
         }
     }
 
