@@ -73,7 +73,7 @@ impl graphics::Scene for GamePickerScene<'_> {
         self.tiles_vel = f32::min(self.tiles_vel, 300.0);
 
         self.tiles_pos += self.tiles_vel;
-        self.tiles_pos = f32::max(self.tiles_pos, (self.tiles.len() - 1) as f32 * -(TILE_SIZE + TILE_SPACING));
+        self.tiles_pos = f32::max(self.tiles_pos, self.tiles.len() as f32 * -(TILE_SIZE + TILE_SPACING) - TILE_SIZE - TILE_SPACING);
         self.tiles_pos = f32::min(self.tiles_pos, 0.0);
 
         if graphics.get_axis_rotation_left().0 == 0.0 {
