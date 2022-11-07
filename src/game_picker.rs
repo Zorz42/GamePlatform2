@@ -7,6 +7,7 @@ use sfml::graphics::{RenderTarget, Shape, Transformable};
 struct Tile {
     icon: sfml::SfBox<sfml::graphics::Texture>,
     title: sfml::graphics::RenderTexture,
+    select_progress: f32,
 }
 
 fn get_tile_size() -> f32 {
@@ -30,6 +31,7 @@ impl Tile {
         Tile{
             icon: texture,
             title: graphics.create_text(name.as_str(), 64, sfml::graphics::Color::WHITE),
+            select_progress: 0.0,
         }
     }
 
@@ -37,28 +39,19 @@ impl Tile {
         let mut icon_sprite = sfml::graphics::Sprite::new();
         icon_sprite.set_texture(&*self.icon, false);
 
-        if is_selected {
-            icon_sprite.set_position(sfml::system::Vector2f::new(offset - get_tile_size_change() / 2.0, get_tile_offset()));
-            let size_x = (get_tile_size() + get_tile_size_change()) / self.icon.size().x as f32;
-            let size_y = (get_tile_size() + get_tile_size_change()) / self.icon.size().y as f32;
-            icon_sprite.set_scale(sfml::system::Vector2f::new(size_x, size_y));
+        let select_progress_must_be = if is_selected {1.0} else {0.0};
+        self.select_progress += (select_progress_must_be - self.select_progress) / 2.0;
 
-        } else {
-            icon_sprite.set_position(sfml::system::Vector2f::new(offset, get_tile_offset()));
-            let size_x = get_tile_size() / self.icon.size().x as f32;
-            let size_y = get_tile_size() / self.icon.size().y as f32;
-            icon_sprite.set_scale(sfml::system::Vector2f::new(size_x, size_y));
-        }
+        icon_sprite.set_position(sfml::system::Vector2f::new(offset - self.select_progress * get_tile_size_change() / 2.0, get_tile_offset()));
+        let size_x = (get_tile_size() + self.select_progress * get_tile_size_change()) / self.icon.size().x as f32;
+        let size_y = (get_tile_size() + self.select_progress * get_tile_size_change()) / self.icon.size().y as f32;
+        icon_sprite.set_scale(sfml::system::Vector2f::new(size_x, size_y));
         graphics_manager.window.draw(&icon_sprite);
 
         let mut text_sprite = sfml::graphics::Sprite::new();
         text_sprite.set_texture(self.title.texture(), false);
-        if is_selected {
-            text_sprite.set_position(sfml::system::Vector2f::new(offset + get_tile_size() / 2.0 - self.title.size().x as f32 / 2.0, get_tile_offset() + get_tile_size() + get_tile_size_change() + get_tile_spacing()));
-        } else {
-            text_sprite.set_position(sfml::system::Vector2f::new(offset + get_tile_size() / 2.0 - self.title.size().x as f32 / 2.0, get_tile_offset() + get_tile_size() + get_tile_spacing()));
-        }
-
+        text_sprite.set_position(sfml::system::Vector2f::new(offset + get_tile_size() / 2.0 - self.title.size().x as f32 / 2.0, get_tile_offset() + get_tile_size() + self.select_progress * get_tile_size_change() + get_tile_spacing()));
+        text_sprite.set_scale(sfml::system::Vector2f::new(1.0 + self.select_progress, 1.0 + self.select_progress));
         graphics_manager.window.draw(&text_sprite);
     }
 }
@@ -117,7 +110,7 @@ impl graphics::Scene for GamePickerScene {
 
         let mut curr_x = self.tiles_render_pos + sfml::window::VideoMode::desktop_mode().width as f32 / 2.0 - get_tile_size() / 2.0;
 
-        let selected_tile = (-self.tiles_render_pos_must_be / (get_tile_size() + get_tile_spacing())) as u32;
+        let selected_tile = (-self.tiles_render_pos_must_be / (get_tile_size() + get_tile_spacing())).round() as u32;
         for i in 0..self.tiles.len() {
             self.tiles[i].draw(curr_x, &mut graphics, i as u32 == selected_tile);
             curr_x += get_tile_size() + get_tile_spacing();
