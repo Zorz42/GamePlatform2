@@ -40,12 +40,13 @@ impl GraphicsManager {
             no_controller_texture: None,
         };
         graphics.window.set_vertical_sync_enabled(true);
-        graphics.no_controller_texture = Some(graphics.create_text("Controller is not connected, you can press ESC to exit.", 100));
+        graphics.no_controller_texture = Some(graphics.create_text("Controller is not connected, you can press ESC to exit.", 100, sfml::graphics::Color::WHITE));
         graphics
     }
 
-    pub fn create_text(&self, text: &str, char_size: u32) -> sfml::graphics::RenderTexture {
-        let text = sfml::graphics::Text::new(text, &self.font, char_size);
+    pub fn create_text(&self, text: &str, char_size: u32, fill_color: sfml::graphics::Color) -> sfml::graphics::RenderTexture {
+        let mut text = sfml::graphics::Text::new(text, &self.font, char_size);
+        text.set_fill_color(fill_color);
         let mut texture = sfml::graphics::RenderTexture::new(text.local_bounds().width as u32 + 5, char_size * 2).unwrap();
         texture.clear(sfml::graphics::Color::TRANSPARENT);
         texture.draw(&text);

@@ -6,10 +6,12 @@ const GAMES_DIR: &str = "Games";
 #[derive(serde_derive::Deserialize)]
 struct GameConfig {
     name: String,
+    icon: String,
 }
 
 pub struct Game {
     pub name: String,
+    pub icon_path: String,
 }
 
 pub struct GameManager {
@@ -26,7 +28,7 @@ impl GameManager {
     pub fn init(&mut self) {
         std::fs::create_dir_all(GAMES_DIR).expect("");
 
-        let paths = std::fs::read_dir("Games/").unwrap();
+        let paths = std::fs::read_dir(GAMES_DIR).unwrap();
         for path in paths {
             let path2 = path.unwrap().path();
             let name = path2.to_str().unwrap();
@@ -57,9 +59,10 @@ impl GameManager {
     }
 
     fn read_game(dirname: String) -> Game {
-        let config = Self::read_game_config(dirname + "/config.toml");
+        let config = Self::read_game_config(dirname.clone() + "/config.toml");
         Game{
             name: config.name,
+            icon_path: dirname.clone() + "/" + &*config.icon,
         }
     }
 }
