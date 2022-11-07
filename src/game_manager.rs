@@ -9,6 +9,7 @@ struct GameConfig {
     icon: String,
 }
 
+#[derive(Clone)]
 pub struct Game {
     pub name: String,
     pub icon_path: String,
@@ -26,7 +27,7 @@ impl GameManager {
     }
 
     pub fn init(&mut self) {
-        std::fs::create_dir_all(GAMES_DIR).expect("");
+        std::fs::create_dir_all(GAMES_DIR).unwrap();
 
         let paths = std::fs::read_dir(GAMES_DIR).unwrap();
         for path in paths {
@@ -64,5 +65,9 @@ impl GameManager {
             name: config.name,
             icon_path: dirname.clone() + "/" + &*config.icon,
         }
+    }
+
+    pub fn run_game(game: &Game) {
+        std::thread::sleep(std::time::Duration::from_secs(5));
     }
 }

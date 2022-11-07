@@ -62,6 +62,7 @@ pub struct GamePickerScene {
     tiles_pos: f32,
     tiles_render_pos_must_be: f32,
     tiles_render_pos: f32,
+    selected_tile: u32,
     games: game_manager::GameManager,
 }
 
@@ -73,6 +74,7 @@ impl GamePickerScene {
             tiles_pos: 0.0,
             tiles_render_pos_must_be: 0.0,
             tiles_render_pos: 0.0,
+            selected_tile: 0,
             games: game_manager::GameManager::new(),
         }
     }
@@ -110,9 +112,9 @@ impl graphics::Scene for GamePickerScene {
 
         let mut curr_x = self.tiles_render_pos + sfml::window::VideoMode::desktop_mode().width as f32 / 2.0 - get_tile_size() / 2.0;
 
-        let selected_tile = (-self.tiles_render_pos_must_be / (get_tile_size() + get_tile_spacing())).round() as u32;
+        self.selected_tile = (-self.tiles_render_pos_must_be / (get_tile_size() + get_tile_spacing())).round() as u32;
         for i in 0..self.tiles.len() {
-            self.tiles[i].draw(curr_x, &mut graphics, i as u32 == selected_tile);
+            self.tiles[i].draw(curr_x, &mut graphics, i as u32 == self.selected_tile);
             curr_x += get_tile_size() + get_tile_spacing();
         }
     }
@@ -120,6 +122,12 @@ impl graphics::Scene for GamePickerScene {
     fn on_event(&mut self, graphics: &mut graphics::GraphicsManager, event: sfml::window::Event) {
         match event {
             sfml::window::Event::KeyPressed {code: sfml::window::Key::Escape, ..} => graphics.window.close(),
+            sfml::window::Event::JoystickButtonPressed {button: 1, ..} => {
+                let game = self.games.games[self.selected_tile as usize].clone();
+                std::thread::spawn(move|| {
+                    game_manager::GameManager::run_game(&game);
+                });
+            }
             _ => {}
         }
     }
