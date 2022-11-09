@@ -45,10 +45,10 @@ impl Tile {
         let mut icon_sprite = sfml::graphics::Sprite::new();
         icon_sprite.set_texture(&*self.icon, false);
 
-        let mut target_x;
-        let mut target_y;
-        let mut target_w;
-        let mut target_h;
+        let target_x;
+        let target_y;
+        let target_w;
+        let target_h;
         if is_running {
             target_x = 0.0;
             target_y = 0.0;
@@ -117,7 +117,7 @@ impl GamePickerScene {
 }
 
 impl graphics::Scene for GamePickerScene {
-    fn init(&mut self, mut graphics: &mut graphics::GraphicsManager) {
+    fn init(&mut self, graphics: &mut graphics::GraphicsManager) {
         self.games.init();
         for game in &self.games.games {
             let texture = sfml::graphics::Texture::from_file(&*game.icon_path).unwrap();
@@ -126,10 +126,11 @@ impl graphics::Scene for GamePickerScene {
     }
 
     fn render(&mut self, mut graphics: &mut graphics::GraphicsManager) {
+        let game_running = !self.running_thread.is_none();
+
         if let Some(thread) = &self.running_thread {
             if thread.is_finished() {
                 self.running_thread = None;
-                self.running_game_index = -1;
             } else {
 
             }
@@ -159,14 +160,26 @@ impl graphics::Scene for GamePickerScene {
 
         self.selected_tile = (-self.tiles_render_pos / (get_tile_size() + get_tile_spacing())).round() as u32;
         for i in 0..self.tiles.len() {
-            if i as i32 != self.running_game_index {
-                self.tiles[i].draw(curr_x, &mut graphics, i as u32 == self.selected_tile, false, self.running_game_index != -1);
+            if i as i32 != self.running_game_index || !game_running {
+                self.tiles[i].draw(curr_x, &mut graphics, i as u32 == self.selected_tile, false, game_running);
             }
             curr_x += get_tile_size() + get_tile_spacing();
         }
 
-        if self.running_game_index != -1 {
+        if game_running {
             self.tiles[self.running_game_index as usize].draw(curr_x, &mut graphics, false, true, false);
+        }
+
+        if self.running_game_index != -1 {
+            let running_game_tile = &self.tiles[self.running_game_index as usize];
+            let transparency = f32::min(running_game_tile.icon_w * 3.0 / sfml::window::VideoMode::desktop_mode().width as f32 - 1.5, 1.0);
+            if transparency < 0.0 {
+                if !game_running {
+                    self.running_game_index = -1;
+                }
+            } else {
+                self.games.render_game(graphics, running_game_tile.icon_x, running_game_tile.icon_y, running_game_tile.icon_w, running_game_tile.icon_h, transparency);
+            }
         }
     }
 
