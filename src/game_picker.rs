@@ -1,4 +1,4 @@
-use crate::graphics;
+use crate::{game_instance, graphics};
 use rand;
 use sfml;
 use crate::game_manager;
@@ -41,7 +41,7 @@ impl Tile {
         }
     }
 
-    pub fn draw(&mut self, offset: f32, graphics_manager: &mut graphics::GraphicsManager, is_selected: bool, is_running: bool, is_out_of_focus: bool) {
+    pub fn draw(&mut self, offset: f32, graphics_manager: &mut graphics::GraphicsManager, render: bool, is_selected: bool, is_running: bool, is_out_of_focus: bool) {
         let mut icon_sprite = sfml::graphics::Sprite::new();
         icon_sprite.set_texture(&*self.icon, false);
 
@@ -76,17 +76,19 @@ impl Tile {
         self.icon_w += (target_w - self.icon_w) / 8.0;
         self.icon_h += (target_h - self.icon_h) / 8.0;
 
-        icon_sprite.set_position(sfml::system::Vector2f::new(self.icon_x, self.icon_y));
-        let size_x = self.icon_w / self.icon.size().x as f32;
-        let size_y = self.icon_h / self.icon.size().y as f32;
-        icon_sprite.set_scale(sfml::system::Vector2f::new(size_x, size_y));
-        graphics_manager.window.draw(&icon_sprite);
+        if render {
+            icon_sprite.set_position(sfml::system::Vector2f::new(self.icon_x, self.icon_y));
+            let size_x = self.icon_w / self.icon.size().x as f32;
+            let size_y = self.icon_h / self.icon.size().y as f32;
+            icon_sprite.set_scale(sfml::system::Vector2f::new(size_x, size_y));
+            graphics_manager.window.draw(&icon_sprite);
 
-        let mut text_sprite = sfml::graphics::Sprite::new();
-        text_sprite.set_texture(self.title.texture(), false);
-        text_sprite.set_position(sfml::system::Vector2f::new(self.icon_x, self.icon_y + self.icon_h));
-        //text_sprite.set_scale(sfml::system::Vector2f::new(1.0 + self.select_progress, 1.0 + self.select_progress));
-        graphics_manager.window.draw(&text_sprite);
+            let mut text_sprite = sfml::graphics::Sprite::new();
+            text_sprite.set_texture(self.title.texture(), false);
+            text_sprite.set_position(sfml::system::Vector2f::new(self.icon_x, self.icon_y + self.icon_h));
+            //text_sprite.set_scale(sfml::system::Vector2f::new(1.0 + self.select_progress, 1.0 + self.select_progress));
+            graphics_manager.window.draw(&text_sprite);
+        }
     }
 }
 
@@ -126,13 +128,19 @@ impl graphics::Scene for GamePickerScene {
     }
 
     fn render(&mut self, mut graphics: &mut graphics::GraphicsManager) {
+        let should_render: bool;
+        if self.games.is_game_instance_running() {
+            let running_game_tile: &Tile = &self.tiles[self.running_game_index as usize];
+            should_render = sfml::window::VideoMode::desktop_mode().width as f32 - running_game_tile.icon_w > 1.0;
+        } else {
+            should_render = true;
+        }
+
         let game_running = !self.running_thread.is_none();
 
         if let Some(thread) = &self.running_thread {
             if thread.is_finished() {
                 self.running_thread = None;
-            } else {
-
             }
             self.tiles_vel = 0.0;
         } else {
@@ -161,24 +169,25 @@ impl graphics::Scene for GamePickerScene {
         self.selected_tile = (-self.tiles_render_pos / (get_tile_size() + get_tile_spacing())).round() as u32;
         for i in 0..self.tiles.len() {
             if i as i32 != self.running_game_index || !game_running {
-                self.tiles[i].draw(curr_x, &mut graphics, i as u32 == self.selected_tile, false, game_running);
+                self.tiles[i].draw(curr_x, &mut graphics, should_render, i as u32 == self.selected_tile, false, game_running);
             }
             curr_x += get_tile_size() + get_tile_spacing();
         }
 
         if game_running {
-            self.tiles[self.running_game_index as usize].draw(curr_x, &mut graphics, false, true, false);
+            self.tiles[self.running_game_index as usize].draw(curr_x, &mut graphics, should_render, false, true, false);
         }
 
-        if self.running_game_index != -1 {
+        if self.games.is_game_instance_running() {
             let running_game_tile = &self.tiles[self.running_game_index as usize];
             let transparency = f32::min(running_game_tile.icon_w * 3.0 / sfml::window::VideoMode::desktop_mode().width as f32 - 1.5, 1.0);
             if transparency < 0.0 {
                 if !game_running {
                     self.running_game_index = -1;
+                    self.games.end_game_instance();
                 }
             } else {
-                self.games.render_game(graphics, running_game_tile.icon_x, running_game_tile.icon_y, running_game_tile.icon_w, running_game_tile.icon_h, transparency);
+                self.games.game_instance.as_mut().unwrap().render_game(graphics, running_game_tile.icon_x, running_game_tile.icon_y, running_game_tile.icon_w, running_game_tile.icon_h, transparency);
             }
         }
     }
@@ -189,8 +198,9 @@ impl graphics::Scene for GamePickerScene {
             sfml::window::Event::JoystickButtonPressed {button: 1, ..} => {
                 let game = self.games.games[self.selected_tile as usize].clone();
                 self.running_game_index = self.selected_tile as i32;
+                self.games.start_game_instance();
                 self.running_thread = Some(std::thread::spawn(move|| {
-                    game_manager::GameManager::run_game(&game);
+                    game_instance::GameInstanceManager::run_game(&game);
                 }));
             }
             _ => {}

@@ -1,6 +1,7 @@
 mod graphics;
 mod game_picker;
 mod game_manager;
+mod game_instance;
 
 
 fn main() {
