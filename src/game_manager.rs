@@ -1,8 +1,6 @@
 use toml;
 use serde_derive;
 use sfml;
-use sfml::graphics::{RenderTarget, Transformable};
-use crate::graphics;
 use crate::game_instance;
 
 const GAMES_DIR: &str = "Games";

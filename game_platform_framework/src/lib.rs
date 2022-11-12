@@ -1,46 +1,46 @@
 pub mod game_instance_shared;
 
 use laminar;
-use serde_derive;
 use bincode;
+use crate::game_instance_shared::PacketType;
 
-pub fn execute() {
-    let renderer_address = game_instance_shared::RENDERER_ADDRESS.parse().unwrap();
-    let mut socket = laminar::Socket::bind(game_instance_shared::GAME_ADDRESS.parse::<String>().unwrap()).unwrap();
+pub struct Color {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
 
-    socket.send(laminar::Packet::unreliable(
-        renderer_address,
-        bincode::serialize(&game_instance_shared::PacketType::Clear {
-            r: 255,
-            g: 255,
-            b: 0,
-        }).unwrap(),
-    )).unwrap();
+pub struct GameInstanceManager {
+    renderer_address: std::net::SocketAddr,
+    socket: laminar::Socket,
+}
 
-    socket.send(laminar::Packet::unreliable(
-        renderer_address,
-        bincode::serialize(&game_instance_shared::PacketType::Refresh).unwrap(),
-    )).unwrap();
+impl GameInstanceManager {
+    pub fn new() -> Self {
+        GameInstanceManager{
+            renderer_address: game_instance_shared::RENDERER_ADDRESS.parse().unwrap(),
+            socket: laminar::Socket::bind(game_instance_shared::GAME_ADDRESS.parse::<String>().unwrap()).unwrap(),
+        }
+    }
 
-    socket.manual_poll(std::time::Instant::now());
+    fn send_packet(&mut self, packet: game_instance_shared::PacketType) {
+        self.socket.send(laminar::Packet::unreliable(
+            self.renderer_address,
+            bincode::serialize(&packet).unwrap(),
+        )).unwrap();
 
-    std::thread::sleep(std::time::Duration::from_secs(1));
+        self.socket.manual_poll(std::time::Instant::now());
+    }
 
-    socket.send(laminar::Packet::unreliable(
-        renderer_address,
-        bincode::serialize(&game_instance_shared::PacketType::Clear {
-            r: 0,
-            g: 0,
-            b: 0,
-        }).unwrap(),
-    )).unwrap();
+    pub fn clear_screen(&mut self, color: Color) {
+        self.send_packet(PacketType::Clear {
+            r: color.r,
+            g: color.g,
+            b: color.g,
+        });
+    }
 
-    socket.send(laminar::Packet::unreliable(
-        renderer_address,
-        bincode::serialize(&game_instance_shared::PacketType::Refresh).unwrap(),
-    )).unwrap();
-
-    socket.manual_poll(std::time::Instant::now());
-
-    std::thread::sleep(std::time::Duration::from_secs(1));
+    pub fn refresh_screen(&mut self) {
+        self.send_packet(PacketType::Refresh);
+    }
 }

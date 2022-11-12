@@ -1,8 +1,7 @@
 use crate::{game_instance, graphics};
-use rand;
 use sfml;
 use crate::game_manager;
-use sfml::graphics::{RenderTarget, Shape, Transformable};
+use sfml::graphics::{RenderTarget, Transformable};
 
 struct Tile {
     icon: sfml::SfBox<sfml::graphics::Texture>,

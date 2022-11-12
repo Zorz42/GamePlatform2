@@ -82,7 +82,6 @@ dependencies = [
  "bincode",
  "game_platform_framework",
  "laminar",
- "rand",
  "serde",
  "serde_derive",
  "sfml",
