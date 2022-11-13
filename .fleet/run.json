@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "cargo",
+            "name": "GamePlatform2",
+            "executableArgs": ["run"],
+        },
+
+    ]
+}
